@@ -43,9 +43,32 @@ lmmv.simple = function(x, y)
   cvxy[4,4] <- cvxy[4,4] /nxy 
   var0 <- t(derivs0) %*% cvxy %*% derivs0
   var1 <- t(derivs1) %*% cvxy %*% derivs1
-  beta = bhat(c(xbar, x2bar, ybar, xybar))
-  list(beta = beta, vars = list(beta0 = var0, beta1 = var1))
+  beta0 = b0hat(c(xbar, x2bar, ybar, xybar))
+  beta1 = b1hat(c(xbar, x2bar, ybar, xybar))
+  list(beta = list(beta0 = beta0, beta1 = beta1), vars = list(beta0 = var0, beta1 = var1))
 }
+
+#simulation
+simmv <- function(n,nreps) {
+  res <- replicate(nreps,{
+    x <- runif(n)
+    y <- runif(n)
+    idx = sample(n, round(0.1 * n), replace = FALSE)
+    idy = sample(n, round(0.1 * n), replace = FALSE)
+    x[idx] = NA
+    y[idy] = NA    
+    tmp <- lmmv.simple(x,y)
+    b0 = (tmp$beta$beta0 - 0.5) / sqrt(tmp$vars$beta0)
+    b1 = (tmp$beta$beta1 - 0) / sqrt(tmp$vars$beta1)
+    c(b0,b1)
+  })
+  
+  beta0test = mean(res[1,] < 1.28)
+  beta1test = mean(res[2,] < 1.28)
+  list(beta0test = beta0test, beta1test = beta1test)
+}
+
+
 
 
 
