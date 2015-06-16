@@ -1,75 +1,129 @@
-# one variable case
-# x is the covariate, y is the response
+# columns of x, the first column of x should should be 1.
 
-lmmv.simple = function(x, y)
-{
-  xbar <- mean(x, na.rm = TRUE)
-  x2bar <- mean(x^2, na.rm = TRUE)
-  ybar <- mean(y, na.rm = TRUE)
-  xybar <- mean(x*y, na.rm = TRUE)
-  b0hat <- function(theta)
+lmmv <- function(x,y)
+{ 
+  n <- dim(x)[1]
+  mcol <- dim(x)[2]
+  # length of parameter length
+  parlen <- mcol*(mcol+1)/2 - 1 + mcol
+  # compute the estimate of E(X1), E(X1X2) etc. 
+  ests <- numeric(parlen)
+  k <- 0
+  for(i in 1:mcol)
   {
-    B = matrix(c(1,theta[1],theta[1],theta[2]),nrow = 2,byrow = TRUE)
-    D = matrix(c(theta[3],theta[4]),nrow = 2)
-    solve(B)[1,] %*% D
+    for(j in i:mcol)
+    {
+      ests[k] <- mean(x[,i] * x[,j], na.rm = T)
+      k <- k + 1
+    }
   }
-  b1hat <- function(theta)
+  for(i in 1:mcol)
   {
-    B = matrix(c(1,theta[1],theta[1],theta[2]),nrow = 2,byrow = TRUE)
-    D = matrix(c(theta[3],theta[4]),nrow = 2)
-    solve(B)[2,] %*% D
+    ests[k] <- mean(x[,i] * y, na.rm = TRUE)
+    k = k + 1
   }
-  derivs0 <- genD(b0hat, c(xbar, x2bar, ybar, xybar))$D[1:4]
-  derivs1 <- genD(b1hat, c(xbar, x2bar, ybar, xybar))$D[1:4]
-  cvxy <- cov(cbind(x,x^2,y,x*y),use="pairwise.complete.obs") 
-  nx <- sum(!is.na(x))
-  ny <- sum(!is.na(y))
-  nxy <- sum(!is.na(x*y))
-  cvxy[1,1] <- cvxy[1,1] / nx
-  cvxy[1,2] <- cvxy[1,2] / nx
-  cvxy[1,3] <- cvxy[1,3] * nxy / (nx*ny)
-  cvxy[1,4] <- cvxy[1,4] * nxy / (nx*nxy)
-  cvxy[2,1] <- cvxy[1,2]
-  cvxy[2,2] <- cvxy[2,2] / nx
-  cvxy[2,3] <- cvxy[2,3] * nxy / (nx*ny)
-  cvxy[2,4] <- cvxy[2,4] * nxy / (nx*nxy)
-  cvxy[3,1] <- cvxy[1,3]
-  cvxy[3,2] <- cvxy[2,3]
-  cvxy[3,3] <- cvxy[3,3] / ny
-  cvxy[3,4] <- cvxy[3,4] * nxy / (ny*nxy)
-  cvxy[4,1] <- cvxy[1,4]
-  cvxy[4,2] <- cvxy[2,4]
-  cvxy[4,3] <- cvxy[3,4]
-  cvxy[4,4] <- cvxy[4,4] /nxy 
-  var0 <- t(derivs0) %*% cvxy %*% derivs0
-  var1 <- t(derivs1) %*% cvxy %*% derivs1
-  beta0 = b0hat(c(xbar, x2bar, ybar, xybar))
-  beta1 = b1hat(c(xbar, x2bar, ybar, xybar))
-  list(beta = list(beta0 = beta0, beta1 = beta1), vars = list(beta0 = var0, beta1 = var1))
+  # theta: parameters(ests)
+  # mcol: the column of x
+  # p: the pth beta in beta vector 1 <= p <= m
+  betahat = function(theta, mcol , pars , p)
+  {
+    D = matrix(c(theta[(pars - mcol + 1):pars]), nrow = mcol)
+    B = matrix(1,nrow = mcol, ncol = mcol)
+    B[1,2:mcol] = theta[1:(mcol-1)]
+    B[2:mcol,1] = theta[1:(mcol-1)]
+    k = mcol
+    for(i in 2:mcol)
+    {
+      for(j in i:mcol)
+        {
+          B[j,i] <- B[i,j] <- theta[k]
+          k = k + 1
+        }
+    }
+    solve(B)[p,] %*% D
+  }  
+  # compute the covariance matrix
+  
+  cvdata = matrix(0, nrow = n, ncol = parlen)
+  k = 0
+  for(i in 1:mcol)
+  {
+    for(j in i:mcol)
+    {
+      #browser()
+      cvdata[,k] = x[,i] * x[,j]
+      k = k + 1
+    }
+  }
+  for(i in 1:mcol)
+  {
+    #browser()
+    cvdata[,k] = x[,i] * y
+    k = k + 1
+  }
+  cvxy <- cov(cvdata,use = "pairwise.complete.obs")
+  
+  for(i in 1:parlen)
+  {
+    for(j in i:parlen)
+    {
+      #browser()
+      ni <- sum(!is.na(cvdata[,i]))
+      nj <- sum(!is.na(cvdata[,j]))
+      nij<- sum(!is.na(cvdata[,i] * cvdata[,j]))
+      cvxy[j,i] <- cvxy[i,j] <- cvxy[i,j] * nij / (ni * nj)
+    }
+  }
+  beta <- sapply(1:mcol, function(i) 
+    betahat(theta = ests, mcol = mcol, pars = parlen, p = i))
+  
+  derivs <- sapply(1:mcol, function(i) 
+    genD(betahat, ests, mcol = mcol, pars = parlen, p = i)$D[1:parlen])
+  
+  vars <- diag(t(derivs) %*% cvxy %*% derivs)
+  
+  list(beta = beta, vars = vars)
 }
+
+#try three variables
+n = 1000
+x1 <- runif(n)
+x2 <- runif(n)
+x3 <- runif(n)
+y <- runif(n)
+idx1 = sample(n, round(0.1 * n), replace = FALSE)
+idx2 = sample(n, round(0.1 * n), replace = FALSE)
+idx3 = sample(n, round(0.1 * n), replace = FALSE)
+idy = sample(n, round(0.1 * n), replace = FALSE)
+x1[idx1] = NA
+x2[idx2] = NA
+x3[idx3] = NA
+y[idy] = NA    
+x = cbind(1,x1,x2,x3)
+lmmv(x,y)
 
 #simulation
-simmv <- function(n,nreps) {
+simmv <- function(num,n,nreps) {
+  #numm is the num of variables 
   res <- replicate(nreps,{
-    x <- runif(n)
+    x <- matrix(1,nrow = n, ncol = num + 1)# the first column is 1
+    for(i in 2:(num+1))
+    {
+      x[,i] = runif(n)
+      idx = sample(n, round(0.1 * n), replace = FALSE)
+      x[idx,i] = NA
+    }
     y <- runif(n)
-    idx = sample(n, round(0.1 * n), replace = FALSE)
     idy = sample(n, round(0.1 * n), replace = FALSE)
-    x[idx] = NA
     y[idy] = NA    
-    tmp <- lmmv.simple(x,y)
-    b0 = (tmp$beta$beta0 - 0.5) / sqrt(tmp$vars$beta0)
-    b1 = (tmp$beta$beta1 - 0) / sqrt(tmp$vars$beta1)
-    c(b0,b1)
+    tmp <- lmmv(x,y)
+    beta0 = (tmp$beta[1] - 0.5) / sqrt(tmp$vars[1])
+    beta = sapply(2:(num+1), function(i) (tmp$beta[i] - 0) / sqrt(tmp$vars[i]))
+    c(beta0,beta)
   })
-  
-  beta0test = mean(res[1,] < 1.28)
-  beta1test = mean(res[2,] < 1.28)
-  list(beta0test = beta0test, beta1test = beta1test)
+  sapply(1:(num+1), function(i) mean(res[i,] < 1.28))
 }
 
-
-
-
+system.time(simmv(3,1000,200))
 
 
