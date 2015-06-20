@@ -1,4 +1,5 @@
 # columns of x, the first column of x should should be 1.
+library(numDeriv)
 
 lmmv <- function(x,y)
 { 
@@ -7,21 +8,11 @@ lmmv <- function(x,y)
   # length of parameter length
   parlen <- mcol*(mcol+1)/2 - 1 + mcol
   # compute the estimate of E(X1), E(X1X2) etc. 
-  ests <- numeric(parlen)
-  k <- 0
-  for(i in 1:mcol)
-  {
-    for(j in i:mcol)
-    {
-      ests[k] <- mean(x[,i] * x[,j], na.rm = T)
-      k <- k + 1
-    }
-  }
-  for(i in 1:mcol)
-  {
-    ests[k] <- mean(x[,i] * y, na.rm = TRUE)
-    k = k + 1
-  }
+  xest <- unlist(sapply(1:(mcol-1),function(i) colMeans(x[,i]* x[,i:mcol],na.rm = TRUE)))
+  xest <- c(xest[-1], mean(x[,mcol] * x[,mcol],na.rm = TRUE))
+  yest <- colMeans(y*x, na.rm = T)
+  ests <- c(xest, yest)
+  
   # theta: parameters(ests)
   # mcol: the column of x
   # p: the pth beta in beta vector 1 <= p <= m
@@ -42,25 +33,19 @@ lmmv <- function(x,y)
     }
     solve(B)[p,] %*% D
   }  
-  # compute the covariance matrix
+  # compute the covariance matrix of ests
   
   cvdata = matrix(0, nrow = n, ncol = parlen)
-  k = 0
-  for(i in 1:mcol)
+  cvdata[,1:(mcol - 1)] = x[,1] * x[,2:mcol]
+  k = mcol
+  for(i in 2:mcol)
   {
-    for(j in i:mcol)
-    {
-      #browser()
-      cvdata[,k] = x[,i] * x[,j]
-      k = k + 1
-    }
+    cvdata[,k : (k + mcol - i)] = x[,i] * x[,i:mcol]
+    k = k + (mcol - i) + 1
   }
-  for(i in 1:mcol)
-  {
-    #browser()
-    cvdata[,k] = x[,i] * y
-    k = k + 1
-  }
+  cvdata[,k: (k + mcol - 1)] = x * y
+  k = k + mcol - 1
+  
   cvxy <- cov(cvdata,use = "pairwise.complete.obs")
   
   for(i in 1:parlen)
@@ -85,22 +70,6 @@ lmmv <- function(x,y)
   list(beta = beta, vars = vars)
 }
 
-#try three variables
-n = 1000
-x1 <- runif(n)
-x2 <- runif(n)
-x3 <- runif(n)
-y <- runif(n)
-idx1 = sample(n, round(0.1 * n), replace = FALSE)
-idx2 = sample(n, round(0.1 * n), replace = FALSE)
-idx3 = sample(n, round(0.1 * n), replace = FALSE)
-idy = sample(n, round(0.1 * n), replace = FALSE)
-x1[idx1] = NA
-x2[idx2] = NA
-x3[idx3] = NA
-y[idy] = NA    
-x = cbind(1,x1,x2,x3)
-lmmv(x,y)
 
 #simulation
 simmv <- function(num,n,nreps) {
@@ -124,6 +93,25 @@ simmv <- function(num,n,nreps) {
   sapply(1:(num+1), function(i) mean(res[i,] < 1.28))
 }
 
-system.time(simmv(3,1000,200))
+#system.time(a <- simmv(3,1000,200))
+
+#try three variables
+#n = 1000
+# x1 <- runif(n)
+# x2 <- runif(n)
+# x3 <- runif(n)
+# y <- runif(n)
+# idx1 = sample(n, round(0.1 * n), replace = FALSE)
+# idx2 = sample(n, round(0.1 * n), replace = FALSE)
+# idx3 = sample(n, round(0.1 * n), replace = FALSE)
+# idy = sample(n, round(0.1 * n), replace = FALSE)
+# x1[idx1] = NA
+# x2[idx2] = NA
+# x3[idx3] = NA
+# y[idy] = NA    
+# x = cbind(1,x1,x2,x3)
+# lmmv(x,y)
+#}
+
 
 
