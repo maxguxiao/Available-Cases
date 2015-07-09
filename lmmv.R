@@ -94,7 +94,7 @@ simmv <- function(num,n,nreps) {
 }
 
 #system.time(a <- simmv(3,1000,200))
-
+#####################################################
 #try three variables
 #n = 1000
 # x1 <- runif(n)
