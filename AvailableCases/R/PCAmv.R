@@ -10,7 +10,7 @@
 #' idx = sample(600,60,replace = FALSE)
 #' X[idx] = NA
 #' data = matrix(X, nrow = 1000)
-#' PCAmv(dat)
+#' PCAmv(data)
 
 PCAmv <- function(data, retX = TRUE)
 {

@@ -19,6 +19,8 @@
 #' x2[idx2] = NA
 #' x3[idx3] = NA
 #' y[idy] = NA    
+#' # The first column of the Data matrix is 1.
+#' #By Now, we only provide the model includes the intersect.
 #' x = cbind(1,x1,x2,x3)
 #' lmmv(x,y)
 
