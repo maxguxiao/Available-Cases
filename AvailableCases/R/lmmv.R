@@ -10,18 +10,16 @@
 #' x1 <- runif(n)
 #' x2 <- runif(n)
 #' x3 <- runif(n)
-#' y <- runif(n)
-#' idx1 = sample(n, round(0.1 * n), replace = FALSE)
-#' idx2 = sample(n, round(0.1 * n), replace = FALSE)
-#' idx3 = sample(n, round(0.1 * n), replace = FALSE)
+#' y <- x1 + x2 + x3 + runif(n)
+#' y <- x1 + x2 + x3 + runif(n)
+#' idx <- sample(3*n, round(0.1 * 3*n), replace = FALSE)
+#' x <- cbind(x1,x2,x3)
+#' x[idx] <- NA
 #' idy = sample(n, round(0.1 * n), replace = FALSE)
-#' x1[idx1] = NA
-#' x2[idx2] = NA
-#' x3[idx3] = NA
-#' y[idy] = NA    
-#' # The first column of the Data matrix is 1.
+#' y[idy] = NA
+#  The first column of the Data matrix is 1.
 #' #By Now, we only provide the model includes the intersect.
-#' x = cbind(1,x1,x2,x3)
+#' x = cbind(1,x)
 #' lmmv(x,y)
 
 lmmv <- function(x,y)

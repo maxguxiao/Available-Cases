@@ -1,8 +1,20 @@
 Package: AvailableCases
-Title: What the Package Does (one line, title case)
+Title: A method to deal with missing value
 Version: 0.0.0.9000
-Authors@R: person("Xiao", "Gu", email = "gu@ucdavis.edu", role = c("aut", "cre"))
+Authors@R: c(
+    person("Xiao", "Gu", email = "gu@ucdavis.edu", role = c("aut"),
+    person("Norm", "Matloff", email = "nsmatloff@ucdavis.edu", role = c("aut", "cre"))
 Description: What the package does (one paragraph)
-Depends: R (>= 3.2.0)
-License: What license is it under?
+Depends: R (>= 3.2.0), stats, numDeriv
+Imports: ggplot2(>= 1.0.1)
+License: The MIT License (MIT)
+
+Copyright (c) <2015> <Xiao Gu, Norm Matloff>
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 LazyData: true
+
