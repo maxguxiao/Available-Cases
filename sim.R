@@ -45,23 +45,39 @@ simlm <- function(nrep, n, p, NAprob)
 
 #simlm(500, 10000, 3, 0.1)
 
+# Cor: Use correlation or covariance matrix
 
-simeig <- function(nreps,n,p,NAprob) {
+simeig <- function(nreps,n,p,NAprob,Cor = FALSE) {
   onerep <- function(n,p,NAprob) {
     np <- n * p
     x <- matrix(runif(np),ncol=p)
     x[,p] <- x[,p] + x[,-p] %*% rep(1,p-1)
     idxs <- makeNA(n = np, missp = NAprob)
     x[idxs] <- NA
-    eig1mv <- sqrt(PCAmv(data = x)$eigenvalues[1])
-    corcc <- cov(x = x,use='complete')
-    eig1cc <- sqrt(eigen(corcc)$values[1])
-    am <- amelia(x = x, p2s = 0 , m = 5)$imputations
-    amX <- Reduce("+", am)/length(am)
-    #using complete because there may still be complete missing pairs after imputations
-    amMat <- cov(x = amX,use='complete')
-    eig1am <- sqrt(eigen(amMat)$values[1])
-    c(eig1cc,eig1am,eig1mv)
+    if(!Cor)
+    {
+      eig1mv <- sqrt(PCAmv(data = x)$eigenvalues[1])
+      corcc <- cov(x = x,use='complete')
+      eig1cc <- sqrt(eigen(corcc)$values[1])
+      am <- amelia(x = x, p2s = 0 , m = 5)$imputations
+      amX <- Reduce("+", am)/length(am)
+      #using complete because there may still be complete missing pairs after imputations
+      amMat <- cov(x = amX,use='complete')
+      eig1am <- sqrt(eigen(amMat)$values[1])
+      c(eig1cc,eig1am,eig1mv)
+    }
+    else
+    {
+      eig1mv <- sqrt(PCAmv(data = x,Cor = TRUE)$eigenvalues[1])
+      corcc <- cor(x = x,use='complete')
+      eig1cc <- sqrt(eigen(corcc)$values[1])
+      am <- amelia(x = x, p2s = 0 , m = 5)$imputations
+      amX <- Reduce("+", am)/length(am)
+      #using complete because there may still be complete missing pairs after imputations
+      amMat <- cor(x = amX,use='complete')
+      eig1am <- sqrt(eigen(amMat)$values[1])
+      c(eig1cc,eig1am,eig1mv)
+    }
   }
   tmp <- t(replicate(nreps, onerep(n,p,NAprob)))
   tmp <- as.data.frame(tmp)
@@ -74,6 +90,6 @@ simeig <- function(nreps,n,p,NAprob) {
   cat("Variance of Available Cases:",var(tmp[,3]),"\n")
 }
 
-#simeig(100,1000,3,0.1)
-
+#simeig(100,1000,3,0.1,Cor = FALSE)
+#simeig(100,1000,3,0.1,Cor = TRUE)
 
