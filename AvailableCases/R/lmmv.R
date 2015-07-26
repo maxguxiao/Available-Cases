@@ -12,14 +12,19 @@
 #' x3 <- runif(n)
 #' y <- x1 + x2 + x3 + runif(n)
 #' y <- x1 + x2 + x3 + runif(n)
-#' idx <- sample(3*n, round(0.1 * 3*n), replace = FALSE)
+#' makeNA <- function(k,missp) {
+#'    nmiss <- rbinom(1,k,missp)
+#'    sample(1:k,nmiss,replace=FALSE)
+#' }
+#' 
+#' idx <- makeNA(3*n, 0.1)
 #' x <- cbind(x1,x2,x3)
 #' x[idx] <- NA
-#' idy = sample(n, round(0.1 * n), replace = FALSE)
-#' y[idy] = NA
-#  The first column of the Data matrix is 1.
+#' idy <- makeNA(n, 0.1)
+#' y[idy] <- NA
+#' #The first column of the Data matrix is 1.
 #' #By Now, we only provide the model includes the intersect.
-#' x = cbind(1,x)
+#' x <- cbind(1,x)
 #' lmmv(x,y)
 
 lmmv <- function(x,y)
