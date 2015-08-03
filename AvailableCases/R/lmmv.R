@@ -26,9 +26,10 @@
 #' #By Now, we only provide the model includes the intersect.
 #' x <- cbind(1,x)
 #' lmmv(x,y)
-
+require(numDeriv)
 lmmv <- function(x,y)
 { 
+  x <- as.matrix(x)
   n <- dim(x)[1]
   mcol <- dim(x)[2]
   # length of parameter length
@@ -66,7 +67,7 @@ lmmv <- function(x,y)
   k = mcol
   for(i in 2:mcol)
   {
-    cvdata[,k : (k + mcol - i)] = x[,i] * x[,i:mcol]
+    cvdata[,k : (k + mcol - i)] = x[,i] * x[,(i:mcol)]
     k = k + (mcol - i) + 1
   }
   cvdata[,k: (k + mcol - 1)] = x * y
@@ -79,10 +80,11 @@ lmmv <- function(x,y)
     for(j in i:parlen)
     {
       #browser()
-      ni <- sum(!is.na(cvdata[,i]))
-      nj <- sum(!is.na(cvdata[,j]))
-      nij<- sum(!is.na(cvdata[,i] * cvdata[,j]))
-      cvxy[j,i] <- cvxy[i,j] <- cvxy[i,j] * nij / (ni * nj)
+      ni <- as.double(sum(!is.na(cvdata[,i])))
+      nj <- as.double(sum(!is.na(cvdata[,j])))
+      nij<- as.double(sum(!is.na(cvdata[,i] * cvdata[,j])))
+      
+      cvxy[j,i] <- cvxy[i,j] <- cvxy[i,j] * (nij / (ni * nj))
     }
   }
   beta <- sapply(1:mcol, function(i) 
