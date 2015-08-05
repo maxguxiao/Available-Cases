@@ -101,22 +101,61 @@ simeig <- function(nreps,n,p,NAprob,Cor = FALSE) {
 #simeig(100,1000,3,0.1,Cor = TRUE)
 
 
-Eig1mv <- function(x, Cor = FALSE)
+#y and z are conditionally independent given x
+simloglin <- function(nreps, n, NAprob)
 {
-  sqrt(PCAmv(data = x,Cor = TRUE)$eigenvalues[1])
+  OneRep <- function(n, NAprob)
+  {
+    x <- matrix(0, nrow = n, ncol = 3)
+    x[,1] <- sample(0:1, n, replace = TRUE,prob = c(0.45, 0.55))
+    for(i in 1:n)
+    {
+      if(x[i,1] == 0)
+      {
+        x[i,2] <- sample(0:1, 1, prob = c(0.4, 0.6))
+        x[i,3] <- sample(0:1, 1, prob = c(0.5, 0.5))
+      }
+      else
+      {
+        x[i,2] <- sample(0:1, 1, prob = c(0.3, 0.7))
+        x[i,3] <- sample(0:1, 1, prob = c(0.8, 0.2))
+      }
+    }
+    idx <- makena(n*3, 0.1)
+    x[idx] <- NA
+    x <- as.data.frame(x)
+    mv.time <- system.time(mv <- loglinmv(x = x,margin = list(c(1,2),c(1,3)))$V1[1])[3]
+    # table function will automatically omit NA.
+    cc.time <- system.time(cc <- loglin(table(x),margin = list(c(1,2),c(1,3)),print = FALSE,param=TRUE)$param$V1[1])[3]
+    am.time<- system.time({
+      amX <- amelia(x = x,noms = c(1,2,3),p2s = 0)$imputations
+      a.out <- list()
+      for(i in 1:length(amX))
+      {
+        tbl <- table(amX[[i]])
+        a.out[[i]] <- loglin(tbl,margin = list(c(1,2),c(1,3)),print = FALSE,param = TRUE)$param$V1[1]
+      }
+      am <- Reduce("+",a.out)/length(a.out)
+    })[3]
+    c(cc, am, mv, cc.time, am.time, mv.time)
+  }
+  tmp <- t(replicate(nreps,OneRep(n,propna)))
+  cat("The log-linear model comparison","\n")
+  cat("Choose the first parameter of V1","\n")
+  cat("Mean of complete obeservations",mean(tmp[,1]),"\n")
+  cat("Mean of Amelia 2:",mean(tmp[,2]),"\n")
+  cat("Mean of Available Cases:",mean(tmp[,3]),"\n")
+  cat("Variance of complete obeservations:",var(tmp[,1]),"\n")
+  cat("Variance of Amelia 2:",var(tmp[,2]),"\n")
+  cat("Variance of Available Cases:",var(tmp[,3]),"\n")
+  cat("Time for complete obeservation is", sum(tmp[,4]),"\n")
+  cat("Time for Amelia is", sum(tmp[,5]),"\n")
+  cat("Time for Available Cases is", sum(tmp[,6]),"\n")
 }
 
-Eig1cc <- function(x)
-{
-  corcc <- cor(x = x,use='complete')
-  sqrt(eigen(corcc)$values[1])
-}
+#simloglin(nreps = 50,n = 1000,NAprob = 0.2)
 
-Eig1am <- function(x)
-{
-  am <- amelia(x = x, p2s = 0 , m = 5)$imputations
-  amX <- Reduce("+", am)/length(am)
-  #using complete because there may still be complete missing pairs after imputations
-  amMat <- cor(x = amX,use='complete')
-  sqrt(eigen(amMat)$values[1])
-}
+
+
+
+

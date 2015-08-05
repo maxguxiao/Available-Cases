@@ -1,5 +1,4 @@
 # author: N. Matloff
-#
 # log-linear model; at present, handles only the 3-factor casea
 #
 # arguments:
@@ -9,7 +8,6 @@
 #            as in loglin()
 #
 # value:  $para component in the value emitted from R's loglin()
-
 loglinmv <- function(x,margin) {
   # find lengths of the elements in the model, do determine what
   # situtation we are in
@@ -21,17 +19,19 @@ loglinmv <- function(x,margin) {
     # X independent of Y and Z?
     if (n1 == 1 && n2 == 1) mdlf <- mxindyz else
       # Y and Z conditionally independent, given X?
-      if (n1 == 1 && n2 == 2) mdlf <-myzcondindx else
-        # all possible 2-way interactions
-        mdlf <- mall2s
+      ##### modify the 1 to 0 below ####
+  if (n1 == 0 && n2 == 2) mdlf <-myzcondindx else #### "1" -> "0" #####
+  # all possible 2-way interactions
+  mdlf <- mall2s
   # need an appropriate shell, with the right dimensions, labels etc.;
   # the contents here are irrelevant and will be overwritten
   x <- as.data.frame(na.omit(x))
   tbl <- table(x)
   tbl <- mdlf(x,margin,tbl,termlengths)
-  loglin(tbl,margin,param=TRUE)$param
+  loglin(tbl,margin,param=TRUE,print = FALSE,)$param
 }
 
+# (1)(2)(3)
 mindep <- function(x,margin,tbl,termlengths) {
   nc <- ncol(x)  # 3
   probs <- list()
@@ -52,6 +52,7 @@ mindep <- function(x,margin,tbl,termlengths) {
   tbl <- nrow(x) * tbl
 }
 
+# (1)(23)
 mxindyz <- function(x,margin,tbl,termlengths) {
   nc <- ncol(x)  # 3
   # which variable is X?
@@ -77,10 +78,14 @@ mxindyz <- function(x,margin,tbl,termlengths) {
   tbl <- nrow(x) * tbl
 }
 
+# (12)(13)
 myzcondindx <- function(x,margin,tbl,termlengths) {
   nc <- ncol(x)  # 3
   # which variable is X?
-  ix <- which(termlengths == 1)
+  ####
+  ix <- as.numeric(names(table(unlist(margin))[table(unlist(margin)) > 1]))  
+  ####
+  #ix <- which(termlengths == 1)
   # and which are Y and Z?
   iyz <- setdiff((1:nc),ix)
   iy <- iyz[1]
@@ -121,9 +126,11 @@ tbltofakedf <- function(tbl) {
     if (freq == 0) return(NULL)
     remainingrow <- adfrow[-nc]
     matrix(rep(remainingrow,freq),byrow=TRUE,nrow=freq)
+    
   }
   Reduce(rbind,apply(adf,1,onecell))
 }
+
 
 #ucb <- tbltofakedf(UCBAdmissions)
 #ucb <- as.data.frame(ucb)
@@ -133,31 +140,7 @@ tbltofakedf <- function(tbl) {
 #ucb <- as.matrix(ucb)
 #ucb[idx] <- NA
 #ucb <- as.data.frame(ucb)
-
-#a <- table(ucb)
-#b <- table(na.omit(ucb))
-#all.equal(target = a,current = b)
-##The result is TRUE for all.equal()
-
-##Same result
 #loglinmv(x = ucb,margin = list(1,2,3))
 #loglin(table(ucb),list(1,2,3),param=TRUE)$param
-##same result
-#a <- loglinmv(ucb,list(1,2:3))
-#b <- loglin(table(ucb),list(1,2:3),param=TRUE)$param
-#all.equal(a,b)
-
-#a <- loglinmv(x = ucb,margin = list(1,c(1:2),c(2:3)))
-#b <- loglin(table(ucb),list(1,c(1:2),c(2:3)),param=TRUE)$param
-#all.equal(a,b)
-#[1] "Component “(Intercept)”: Mean relative difference: 0.04317363"
-#[2] "Component “V2”: Mean relative difference: 0.5079941"          
-#[3] "Component “V3”: Mean relative difference: 1.537664"           
-#[4] "Component “V2.V3”: Mean relative difference: 10.08918"  
-
-
-#a <- loglinmv(ucb,list(2,c(1,3)))
-#b <- loglin(table(ucb),list(2,c(1,3)),param=TRUE)$param
-#all.equal(a,b)
 
 
