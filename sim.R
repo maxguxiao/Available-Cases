@@ -102,7 +102,7 @@ simeig <- function(nreps,n,p,NAprob,Cor = FALSE) {
 
 
 #y and z are conditionally independent given x
-simloglin <- function(nreps, n, NAprob)
+simloglin1 <- function(nreps, n, NAprob)
 {
   OneRep <- function(n, NAprob)
   {
@@ -126,36 +126,63 @@ simloglin <- function(nreps, n, NAprob)
     x <- as.data.frame(x)
     mv.time <- system.time(mv <- loglinmv(x = x,margin = list(c(1,2),c(1,3)))$V1[1])[3]
     # table function will automatically omit NA.
-    cc.time <- system.time(cc <- loglin(table(x),margin = list(c(1,2),c(1,3)),print = FALSE,param=TRUE)$param$V1[1])[3]
-    am.time<- system.time({
-      amX <- amelia(x = x,noms = c(1,2,3),p2s = 0)$imputations
-      a.out <- list()
-      for(i in 1:length(amX))
-      {
-        tbl <- table(amX[[i]])
-        a.out[[i]] <- loglin(tbl,margin = list(c(1,2),c(1,3)),print = FALSE,param = TRUE)$param$V1[1]
-      }
-      am <- Reduce("+",a.out)/length(a.out)
-    })[3]
-    c(cc, am, mv, cc.time, am.time, mv.time)
+    cc.time <- system.time(cc <- loglin(table(x),margin = list(c(1,2),c(1,3)),print = FALSE,param=TRUE)$param$V1[1])[3] 
+    c(cc, mv, cc.time,mv.time)
   }
   tmp <- t(replicate(nreps,OneRep(n,propna)))
   cat("The log-linear model comparison","\n")
   cat("Choose the first parameter of V1","\n")
   cat("Mean of complete obeservations",mean(tmp[,1]),"\n")
-  cat("Mean of Amelia 2:",mean(tmp[,2]),"\n")
-  cat("Mean of Available Cases:",mean(tmp[,3]),"\n")
+  cat("Mean of Available Cases:",mean(tmp[,2]),"\n")
   cat("Variance of complete obeservations:",var(tmp[,1]),"\n")
-  cat("Variance of Amelia 2:",var(tmp[,2]),"\n")
-  cat("Variance of Available Cases:",var(tmp[,3]),"\n")
-  cat("Time for complete obeservation is", sum(tmp[,4]),"\n")
-  cat("Time for Amelia is", sum(tmp[,5]),"\n")
-  cat("Time for Available Cases is", sum(tmp[,6]),"\n")
+  cat("Variance of Available Cases:",var(tmp[,2]),"\n")
+  cat("Time for complete obeservation is", sum(tmp[,3]),"\n")
+  cat("Time for Available Cases is", sum(tmp[,4]),"\n")
 }
 
-#simloglin(nreps = 50,n = 1000,NAprob = 0.2)
+
+#simloglin1(nreps = 50,n = 1000,NAprob = 0.2)
 
 
+#not conditionally indenpendent
 
-
-
+simloglin2 <- function(nreps, n, NAprob)
+{
+  OneRep <- function(n, NAprob)
+  {
+    x <- matrix(0, nrow = n, ncol = 3)
+    x[,1] <- sample(0:1, n, replace = TRUE,prob = c(0.45, 0.55))
+    for(i in 1:n)
+    {
+      if(x[i,1] == 0)
+      {
+        x[i,2] <- sample(0:1, 1, prob = c(0.4, 0.6))
+        if (x[i,2] == 1) x[i,3] <- sample(0:1,size=1,prob=c(0.2,0.8)) else
+          x[i,3] <- sample(0:1,size=1) 
+      }
+      else
+      {
+        x[i,2] <- sample(0:1, 1, prob = c(0.3, 0.7))
+        if (x[i,2] == 1) x[i,3] <- sample(0:1,size=1,prob=c(0.5,0.5)) else
+          x[i,3] <- sample(0:1,size=1) 
+      }
+    }
+    idx <- makena(n*3, 0.1)
+    x[idx] <- NA
+    x <- as.data.frame(x)
+    mv.time <- system.time(mv <- loglinmv(x = x,margin = list(c(1,2),c(1,3)))$V1[1])[3]
+    # table function will automatically omit NA.
+    cc.time <- system.time(cc <- loglin(table(x),margin = list(c(1,2),c(1,3)),print = FALSE,param=TRUE)$param$V1[1])[3] 
+    c(cc, mv, cc.time,mv.time)
+  }
+  tmp <- t(replicate(nreps,OneRep(n,propna)))
+  cat("The log-linear model comparison","\n")
+  cat("Choose the first parameter of V1","\n")
+  cat("Mean of complete obeservations",mean(tmp[,1]),"\n")
+  cat("Mean of Available Cases:",mean(tmp[,2]),"\n")
+  cat("Variance of complete obeservations:",var(tmp[,1]),"\n")
+  cat("Variance of Available Cases:",var(tmp[,2]),"\n")
+  cat("Time for complete obeservation is", sum(tmp[,3]),"\n")
+  cat("Time for Available Cases is", sum(tmp[,4]),"\n")
+}
+#simloglin2(nreps = 50,n = 1000,NAprob = 0.2)
